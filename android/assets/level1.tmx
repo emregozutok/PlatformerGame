@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" tiledversion="1.1.6" orientation="orthogonal" renderorder="right-down" width="240" height="30" tilewidth="16" tileheight="16" infinite="0" nextobjectid="1">
+ <tileset firstgid="1" source="floor.tsx"/>
+ <layer name="Ground" width="240" height="30">
+  <data encoding="base64" compression="zlib">
+   eJzt2LkOwyAUBEByOXec5P8/Nq+xROEilmNMxIy0BQ3sq0CkBAAAAAAAAAAAAAAAAAAAAAAAAABAyzaRbaRbuwgw2TFyitzWLgJMdo88Iu+1iwBfG97Nu8g+ckje0PAvhnfzOXKJXJM3NNRm7J6du+4W3l+fuudrrX/pefJzxu7Zuev8nl5if33qnq+1/qXnyc8Z/qf6yDPy+sE6/+taYn996p6vtf6l58nP+QCylRoI
+  </data>
+ </layer>
+</map>
