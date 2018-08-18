@@ -2,9 +2,12 @@ package com.mre.game.platformer.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -33,10 +36,13 @@ public class LoadingScreen extends ScreenAdapter {
         viewport = new FitViewport(WORLD_WIDTH, WORLD_HEIGHT, cam);
         shapeRenderer = new ShapeRenderer();
         /*
-        game.getManager().load("acorn.png", Texture.class);
         game.getManager().load("floor.png", Texture.class);
-        game.getManager().load("pete.png", Texture.class);
         */
+        game.getManager().load("acorn.png", Texture.class);
+        game.getManager().load("acorn.wav", Sound.class);
+        game.getManager().load("pete.png", Texture.class);
+        game.getManager().load("jump.wav", Sound.class);
+        game.getManager().load("peteTheme.mp3", Music.class);
         game.getManager().load("level1.tmx", TiledMap.class);
     }
 
