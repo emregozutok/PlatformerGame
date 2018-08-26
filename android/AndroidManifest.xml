@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.mre.game.platformer" >
 
+    <uses-feature android:glEsVersion="0x0002000" android:required="true" />
     <uses-sdk android:minSdkVersion="9" android:targetSdkVersion="28" />
 
     <application
