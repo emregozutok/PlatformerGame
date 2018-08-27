@@ -1,91 +1,56 @@
 package com.mre.game.platformer.game;
 
 import com.badlogic.gdx.Application;
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.math.Rectangle;
+import com.mre.game.platformer.entities.BunnyHead;
+import com.mre.game.platformer.entities.Feather;
+import com.mre.game.platformer.entities.GoldCoin;
+import com.mre.game.platformer.entities.Rock;
+import com.mre.game.platformer.screens.MenuScreen;
 import com.mre.game.platformer.util.CameraHelper;
+import com.mre.game.platformer.util.Constants;
 
 public class WorldController extends InputAdapter {
 
     private static final String TAG = WorldController.class.getName();
 
-    public Sprite[] testSprites;
-    public int selectedSprite;
+    private Game game;
 
     public CameraHelper camHelper;
+    public Level level;
+    public int lives;
+    public int score;
+    private float timeLeftGameOverDelay;
+
+    // Rectangles for collision detection
+    private Rectangle r1 = new Rectangle();
+    private Rectangle r2 = new Rectangle();
 
     public WorldController() {
-        Gdx.input.setInputProcessor(this);
-        camHelper = new CameraHelper();
+        this.game = (Game) Gdx.app.getApplicationListener();
         init();
     }
 
     private void init() {
-        // initTestPixmapObjects();
-        initTestObjects();
+        Gdx.input.setInputProcessor(this);
+        camHelper = new CameraHelper();
+        lives = Constants.LIVES_START;
+        timeLeftGameOverDelay = 0;
+        initLevel();
     }
 
-    private void initTestObjects () {
-        // Create new array for 5 sprites
-        testSprites = new Sprite[5];
-        // Create a list of texture regions
-        Array<TextureRegion> regions = new Array<TextureRegion>();
-        regions.add(Assets.instance.bunny.head);
-        regions.add(Assets.instance.feather.feather);
-        regions.add(Assets.instance.goldCoin.goldCoin);
-        // Create new sprites using a random texture region
-        for (int i = 0; i < testSprites.length; i++) {
-            Sprite spr = new Sprite(regions.random());
-            // Define sprite size to be 1m x 1m in game world
-            spr.setSize(1, 1);
-            // Set origin to sprite's center
-            spr.setOrigin(spr.getWidth() / 2.0f, spr.getHeight() / 2.0f);
-            // Calculate random position for sprite
-            float randomX = MathUtils.random(-2.0f, 2.0f);
-            float randomY = MathUtils.random(-2.0f, 2.0f);
-            spr.setPosition(randomX, randomY);
-            // Put new sprite into array
-            testSprites[i] = spr;
-        }
-        // Set first sprite as selected one
-        selectedSprite = 0;
+    private void initLevel() {
+        score = 0;
+        level = new Level(Constants.LEVEL_01);
+        camHelper.setTarget(level.bunnyHead);
     }
 
-    private void initTestPixmapObjects() {
-        // Create new array for 5 sprites
-        testSprites = new Sprite[5];
-        // Create empty POT-sized Pixmap with 8 bit RGBA pixel data
-        int width = 32;
-        int height = 32;
-        Pixmap pixmap = createProceduralPixmap(width, height);
-        // Create a new texture from pixmap data
-        Texture texture = new Texture(pixmap);
-        // Create new sprites using the just created texture
-        for (int i = 0; i < testSprites.length; i++) {
-            Sprite spr = new Sprite(texture);
-            // Define sprite size to be 1m x 1m in game world
-            spr.setSize(1, 1);
-            // Set origin to sprite's center
-            spr.setOrigin(spr.getWidth() / 2.0f, spr.getHeight() / 2.0f);
-            // Calculate random position for sprite
-            float randomX = MathUtils.random(-2.0f, 2.0f);
-            float randomY = MathUtils.random(-2.0f, 2.0f);
-            spr.setPosition(randomX, randomY);
-            // Put new sprite into array
-            testSprites[i] = spr;
-        }
-        // Set first sprite as selected one
-        selectedSprite = 0;
-    }
-
-    private Pixmap createProceduralPixmap (int width, int height) {
+    private Pixmap createProceduralPixmap(int width, int height) {
         Pixmap pixmap = new Pixmap(width, height, Pixmap.Format.RGBA8888);
         // Fill square with red color at 50% opacity
         pixmap.setColor(1, 0, 0, 0.5f);
@@ -102,34 +67,48 @@ public class WorldController extends InputAdapter {
 
     public void update(float deltaTime) {
         handleDebugInput(deltaTime);
-        updateTestObjects(deltaTime);
+        if (isGameOver()) {
+            timeLeftGameOverDelay -= deltaTime;
+            if (timeLeftGameOverDelay < 0) {
+                backToMenu();
+            }
+        } else {
+            handleInputGame(deltaTime);
+        }
+        level.update(deltaTime);
+        testCollisions();
         camHelper.update(deltaTime);
+        if (!isGameOver() && isPlayerInWater()) {
+            lives--;
+            if (isGameOver()) {
+                timeLeftGameOverDelay = Constants.TIME_DELAY_GAME_OVER;
+            } else {
+                initLevel();
+            }
+        }
     }
 
-    private void handleDebugInput (float deltaTime) {
+    private void handleDebugInput(float deltaTime) {
         if (Gdx.app.getType() != Application.ApplicationType.Desktop) return;
 
-        // Selected Sprite Controls
-        float sprMoveSpeed = 5 * deltaTime;
-        if (Gdx.input.isKeyPressed(Input.Keys.A)) moveSelectedSprite(-sprMoveSpeed, 0);
-        if (Gdx.input.isKeyPressed(Input.Keys.D)) moveSelectedSprite(sprMoveSpeed, 0);
-        if (Gdx.input.isKeyPressed(Input.Keys.W)) moveSelectedSprite(0, sprMoveSpeed);
-        if (Gdx.input.isKeyPressed(Input.Keys.S)) moveSelectedSprite(0, -sprMoveSpeed);
-
-        // Camera Controls (move)
-        float camMoveSpeed = 5 * deltaTime;
-        float camMoveSpeedAccelerationFactor = 5;
-        if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)) camMoveSpeed *= camMoveSpeedAccelerationFactor;
-        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) moveCamera(-camMoveSpeed, 0);
-        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) moveCamera(camMoveSpeed, 0);
-        if (Gdx.input.isKeyPressed(Input.Keys.UP)) moveCamera(0, camMoveSpeed);
-        if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) moveCamera(0, -camMoveSpeed);
-        if (Gdx.input.isKeyPressed(Input.Keys.BACKSPACE)) camHelper.setPosition(0, 0);
+        if (!camHelper.hasTarget(level.bunnyHead)) {
+            // Camera Controls (move)
+            float camMoveSpeed = 5 * deltaTime;
+            float camMoveSpeedAccelerationFactor = 5;
+            if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT))
+                camMoveSpeed *= camMoveSpeedAccelerationFactor;
+            if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) moveCamera(-camMoveSpeed, 0);
+            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) moveCamera(camMoveSpeed, 0);
+            if (Gdx.input.isKeyPressed(Input.Keys.UP)) moveCamera(0, camMoveSpeed);
+            if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) moveCamera(0, -camMoveSpeed);
+            if (Gdx.input.isKeyPressed(Input.Keys.BACKSPACE)) camHelper.setPosition(0, 0);
+        }
 
         // Camera Controls (zoom)
         float camZoomSpeed = 1 * deltaTime;
         float camZoomSpeedAccelerationFactor = 5;
-        if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)) camZoomSpeed *= camZoomSpeedAccelerationFactor;
+        if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT))
+            camZoomSpeed *= camZoomSpeedAccelerationFactor;
         if (Gdx.input.isKeyPressed(Input.Keys.COMMA)) camHelper.addZoom(camZoomSpeed);
         if (Gdx.input.isKeyPressed(Input.Keys.PERIOD)) camHelper.addZoom(-camZoomSpeed);
         if (Gdx.input.isKeyPressed(Input.Keys.SLASH)) {
@@ -137,49 +116,135 @@ public class WorldController extends InputAdapter {
         }
     }
 
-    private void moveCamera (float x, float y) {
+    private void handleInputGame(float deltaTime) {
+        if (camHelper.hasTarget(level.bunnyHead)) {
+            // Player Movement
+            if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+                level.bunnyHead.velocity.x = -level.bunnyHead.terminalVelocity.x;
+            } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+                level.bunnyHead.velocity.x = level.bunnyHead.terminalVelocity.x;
+            } else {
+                // Execute auto-forward movement on non-desktop platform
+                if (Gdx.app.getType() != Application.ApplicationType.Desktop) {
+                    level.bunnyHead.velocity.x = level.bunnyHead.terminalVelocity.x;
+                }
+            }
+
+            // Bunny Jump
+            if (Gdx.input.isTouched() || Gdx.input.isKeyPressed(Input.Keys.SPACE)) {
+                level.bunnyHead.setJumping(true);
+            } else {
+                level.bunnyHead.setJumping(false);
+            }
+        }
+    }
+
+    private void moveCamera(float x, float y) {
         x += camHelper.getPosition().x;
         y += camHelper.getPosition().y;
         camHelper.setPosition(x, y);
     }
 
-    private void moveSelectedSprite (float x, float y) {
-        testSprites[selectedSprite].translate(x, y);
-    }
-
-    private void updateTestObjects(float deltaTime) {
-        // Get current rotation from selected sprite
-        float rotation = testSprites[selectedSprite].getRotation();
-        // Rotate sprite by 90 degrees per second
-        rotation += 90 * deltaTime;
-        // Wrap around at 360 degrees
-        rotation %= 360;
-        // Set new rotation value to selected sprite
-        testSprites[selectedSprite].setRotation(rotation);
-    }
-
     @Override
-    public boolean keyUp (int keycode) {
+    public boolean keyUp(int keycode) {
         // Reset game world
         if (keycode == Input.Keys.R) {
             init();
             Gdx.app.debug(TAG, "Game world resetted");
         }
-        // Select next sprite
-        else if (keycode == Input.Keys.SPACE) {
-            selectedSprite = (selectedSprite + 1) % testSprites.length;
-            // Update camera's target to follow the currently
-            // selected sprite
-            if (camHelper.hasTarget()) {
-                camHelper.setTarget(testSprites[selectedSprite]);
-            }
-            Gdx.app.debug(TAG, "Sprite #" + selectedSprite + " selected");
-        }
         // Toggle camera follow
         else if (keycode == Input.Keys.ENTER) {
-            camHelper.setTarget(camHelper.hasTarget() ? null : testSprites[selectedSprite]);
+            camHelper.setTarget(camHelper.hasTarget() ? null : level.bunnyHead);
             Gdx.app.debug(TAG, "Camera follow enabled: " + camHelper.hasTarget());
         }
+        // Back to Menu
+        else if (keycode == Input.Keys.ESCAPE || keycode == Input.Keys.BACK) {
+            backToMenu();
+        }
         return false;
+    }
+
+    private void onCollisionBunnyHeadWithRock(Rock rock) {
+        BunnyHead bunnyHead = level.bunnyHead;
+        float heightDifference = Math.abs(bunnyHead.position.y - (rock.position.y + rock.bounds.height));
+        if (heightDifference > 0.25f) {
+            boolean hitRightEdge = bunnyHead.position.x > (rock.position.x + rock.bounds.width / 2.0f);
+            if (hitRightEdge) {
+                bunnyHead.position.x = rock.position.x + rock.bounds.width;
+            } else {
+                bunnyHead.position.x = rock.position.x - bunnyHead.bounds.width;
+            }
+            return;
+        }
+
+        switch (bunnyHead.jumpState) {
+            case GROUNDED:
+                break;
+            case FALLING:
+            case JUMP_FALLING:
+                bunnyHead.position.y = rock.position.y + bunnyHead.bounds.height + bunnyHead.origin.y;
+                bunnyHead.jumpState = BunnyHead.JUMP_STATE.GROUNDED;
+                break;
+            case JUMP_RISING:
+                bunnyHead.position.y = rock.position.y + bunnyHead.bounds.height + bunnyHead.origin.y;
+                break;
+        }
+    }
+
+    private void onCollisionBunnyWithGoldCoin(GoldCoin goldcoin) {
+        goldcoin.collected = true;
+        score += goldcoin.getScore();
+        Gdx.app.log(TAG, "Gold coin collected");
+    }
+
+    private void onCollisionBunnyWithFeather(Feather feather) {
+        feather.collected = true;
+        score += feather.getScore();
+        level.bunnyHead.setFeatherPowerup(true);
+        Gdx.app.log(TAG, "Feather collected");
+    }
+
+    private void testCollisions() {
+        r1.set(level.bunnyHead.position.x, level.bunnyHead.position.y, level.bunnyHead.bounds.width, level.bunnyHead.bounds.height);
+
+        // Test collision: Bunny Head <-> Rocks
+        for (Rock rock : level.rocks) {
+            r2.set(rock.position.x, rock.position.y, rock.bounds.width, rock.bounds.height);
+            if (!r1.overlaps(r2)) continue;
+            onCollisionBunnyHeadWithRock(rock);
+            // IMPORTANT: must do all collisions for valid
+            // edge testing on rocks.
+        }
+
+        // Test collision: Bunny Head <-> Gold Coins
+        for (GoldCoin goldcoin : level.goldcoins) {
+            if (goldcoin.collected) continue;
+            r2.set(goldcoin.position.x, goldcoin.position.y, goldcoin.bounds.width, goldcoin.bounds.height);
+            if (!r1.overlaps(r2)) continue;
+            onCollisionBunnyWithGoldCoin(goldcoin);
+            break;
+        }
+
+        // Test collision: Bunny Head <-> Feathers
+        for (Feather feather : level.feathers) {
+            if (feather.collected) continue;
+            r2.set(feather.position.x, feather.position.y, feather.bounds.width, feather.bounds.height);
+            if (!r1.overlaps(r2)) continue;
+            onCollisionBunnyWithFeather(feather);
+            break;
+        }
+    }
+
+    public boolean isGameOver() {
+        return lives < 0;
+    }
+
+    public boolean isPlayerInWater() {
+        return level.bunnyHead.position.y < -5;
+    }
+
+    private void backToMenu() {
+        // switch to menu screen
+        game.setScreen(new MenuScreen());
     }
 }

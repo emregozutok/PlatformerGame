@@ -41,12 +41,14 @@ public class Mountains extends AbstractGameObject {
         for (int i = 0; i < mountainLength; i++) {
             // mountain left
             reg = regMountainLeft;
-            batch.draw(reg.getTexture(), origin.x + xRel, position.y + origin.y + yRel, origin.x, origin.y, dimension.x, dimension.y, scale.x, scale.y, rotation, reg.getRegionX(), reg.getRegionY(), reg.getRegionWidth(), reg.getRegionHeight(), false, false);
+            batch.draw(reg.getTexture(), origin.x + xRel, position.y + origin.y + yRel, origin.x, origin.y, dimension.x, dimension.y, scale.x, scale.y,
+                    rotation, reg.getRegionX(), reg.getRegionY(), reg.getRegionWidth(), reg.getRegionHeight(), false, false);
             xRel += dimension.x;
 
             // mountain right
             reg = regMountainRight;
-            batch.draw(reg.getTexture(),origin.x + xRel, position.y + origin.y + yRel, origin.x, origin.y, dimension.x, dimension.y, scale.x, scale.y, rotation, reg.getRegionX(), reg.getRegionY(), reg.getRegionWidth(), reg.getRegionHeight(), false, false);
+            batch.draw(reg.getTexture(),origin.x + xRel, position.y + origin.y + yRel, origin.x, origin.y, dimension.x, dimension.y, scale.x, scale.y,
+                    rotation, reg.getRegionX(), reg.getRegionY(), reg.getRegionWidth(), reg.getRegionHeight(), false, false);
             xRel += dimension.x;
         }
         // reset color to white

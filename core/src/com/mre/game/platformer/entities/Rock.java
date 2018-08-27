@@ -27,6 +27,9 @@ public class Rock extends AbstractGameObject {
 
     public void setLength(int length) {
         this.length = length;
+        // Update bounding box for collision detection
+        // This will make sure that the size of the bounding box is adjusted whenever the length of a rock is changed.
+        bounds.set(0, 0, dimension.x * length, dimension.y);
     }
 
     public void increaseLength(int amount) {
@@ -43,19 +46,22 @@ public class Rock extends AbstractGameObject {
         // Draw left edge
         reg = regEdge;
         relX -= dimension.x / 4;
-        batch.draw(reg.getTexture(), position.x + relX, position.y + relY, origin.x, origin.y, dimension.x / 4, dimension.y, scale.x, scale.y, rotation, reg.getRegionX(), reg.getRegionY(), reg.getRegionWidth(), reg.getRegionHeight(), false, false);
+        batch.draw(reg.getTexture(), position.x + relX, position.y + relY, origin.x, origin.y, dimension.x / 4, dimension.y, scale.x, scale.y,
+                rotation, reg.getRegionX(), reg.getRegionY(), reg.getRegionWidth(), reg.getRegionHeight(), false, false);
 
         // Draw middle
         relX = 0;
         reg = regMiddle;
         for (int i = 0; i < length; i++) {
-            batch.draw(reg.getTexture(), position.x + relX, position.y + relY, origin.x, origin.y, dimension.x, dimension.y, scale.x, scale.y, rotation, reg.getRegionX(), reg.getRegionY(), reg.getRegionWidth(), reg.getRegionHeight(), false, false);
+            batch.draw(reg.getTexture(), position.x + relX, position.y + relY, origin.x, origin.y, dimension.x, dimension.y, scale.x, scale.y,
+                    rotation, reg.getRegionX(), reg.getRegionY(), reg.getRegionWidth(), reg.getRegionHeight(), false, false);
             relX += dimension.x;
         }
 
         // Draw right edge
         reg = regEdge;
-        batch.draw(reg.getTexture(), position.x + relX, position.y + relY, origin.x + dimension.x / 8, origin.y, dimension.x / 4, dimension.y, scale.x, scale.y, rotation, reg.getRegionX(), reg.getRegionY(), reg.getRegionWidth(), reg.getRegionHeight(), true, false);
+        batch.draw(reg.getTexture(), position.x + relX, position.y + relY, origin.x + dimension.x / 8, origin.y, dimension.x / 4, dimension.y, scale.x, scale.y,
+                rotation, reg.getRegionX(), reg.getRegionY(), reg.getRegionWidth(), reg.getRegionHeight(), true, false);
 
     }
 }
